@@ -76,20 +76,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate,
         try! handler.perform([request])
     }
     
-//    func handleFaceLandmarksRecognition(request: VNRequest, error: Error?)
-//    {
-//         guard let foundFaces = request.results as? [VNFaceObservation] else
-//         {
-//             fatalError ("Problem loading picture to examine faces")
-//         }
-//         for faceRectangle in foundFaces
-//         {
-//             let landmarkRegions: [VNFaceLandmarkRegion2D] = []
-//             drawImage(source: pictureChosen.image!,
-//             boundary: faceRectangle.boundingBox, faceLandmarkRegions:
-//            landmarkRegions)
-//         }
-//    }
     
     func handleFaceLandmarksRecognition(request: VNRequest, error: Error?)
     {
@@ -101,82 +87,80 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate,
         for faceRectangle in foundFaces
         {
             guard let landmarks = faceRectangle.landmarks else
-        {
-            continue
+            {
+                continue
+            }
+            var landmarkRegions: [VNFaceLandmarkRegion2D] = []
+            if let faceContour = landmarks.faceContour
+            {
+                landmarkRegions.append(faceContour)
+            }
+            if let leftEye = landmarks.leftEye
+            {
+                landmarkRegions.append(leftEye)
+            }
+            if let rightEye = landmarks.rightEye
+            {
+                landmarkRegions.append(rightEye)
+            }
+            if let nose = landmarks.nose
+            {
+                landmarkRegions.append(nose)
+            }
+            drawImage(source: pictureChosen.image!,
+            boundary: faceRectangle.boundingBox, faceLandmarkRegions: landmarkRegions)
         }
-            
-        var landmarkRegions: [VNFaceLandmarkRegion2D] = []
-            
-        if let faceContour = landmarks.faceContour
-        {
-            landmarkRegions.append(faceContour)
-        }
-        if let leftEye = landmarks.leftEye
-        {
-            landmarkRegions.append(leftEye)
-        }
-        if let rightEye = landmarks.rightEye
-        {
-            landmarkRegions.append(rightEye)
-        }
-        if let nose = landmarks.nose
-        {
-            landmarkRegions.append(nose)
-        }
-        drawImage(source: pictureChosen.image!,
-        boundary: faceRectangle.boundingBox, faceLandmarkRegions: landmarkRegions)
-        }
-        
     }
     
     func drawImage(source: UIImage, boundary: CGRect,
      faceLandmarkRegions:[VNFaceLandmarkRegion2D])
     {
-     UIGraphicsBeginImageContextWithOptions(source.size, false, 1)
-     let context = UIGraphicsGetCurrentContext()!
-     context.translateBy(x: 0, y: source.size.height)
-     context.scaleBy(x: 1.0, y: -1.0)
-     context.setLineJoin(.round)
-     context.setLineCap(.round)
-     context.setShouldAntialias(true)
-     context.setAllowsAntialiasing(true)
-    let rect = CGRect(x: 0, y:0, width: source.size.width,
-      height: source.size.height)
-     context.draw(source.cgImage!, in: rect)
-     //draw rectangles around faces
-     var fillColor = UIColor.systemGreen
-     fillColor.setStroke()
-     context.setLineWidth(10.0)
-     let rectangleWidth = source.size.width * boundary.size.width
-     let rectangleHeight = source.size.height * boundary.size.height
-     context.addRect(CGRect(
-      x: boundary.origin.x * source.size.width,
-      y:boundary.origin.y * source.size.height,
-      width: rectangleWidth,
-      height: rectangleHeight))
-     context.drawPath(using: CGPathDrawingMode.stroke)
-     //draw facial features
-     fillColor = UIColor.systemRed
-     fillColor.setStroke()
-     context.setLineWidth(5.0)
-     for faceLandmarkRegion in faceLandmarkRegions
-     {
-      var points: [CGPoint] = []
-      for i in 0..<faceLandmarkRegion.pointCount
-      {
-       let point = faceLandmarkRegion.normalizedPoints[i]
-       let p = CGPoint(x: CGFloat(point.x), y: CGFloat(point.y))
-       points.append(p)
-      }
-      let facialPoints = points.map { CGPoint(
-       x: boundary.origin.x * source.size.width + $0.x * rectangleWidth,
-       y: boundary.origin.y * source.size.height + $0.y * rectangleHeight) }
-      context.addLines(between: facialPoints)
-      context.drawPath(using: CGPathDrawingMode.stroke)
-    }
-     let modifiedImage : UIImage = UIGraphicsGetImageFromCurrentImageContext()!
-     UIGraphicsEndImageContext()
-     pictureChosen.image = modifiedImage
+        UIGraphicsBeginImageContextWithOptions(source.size, false, 1)
+        let context = UIGraphicsGetCurrentContext()!
+        context.translateBy(x: 0, y: source.size.height)
+        context.scaleBy(x: 1.0, y: -1.0)
+        context.setLineJoin(.round)
+        context.setLineCap(.round)
+        context.setShouldAntialias(true)
+        context.setAllowsAntialiasing(true)
+        let rect = CGRect(x: 0, y:0, width: source.size.width,
+        height: source.size.height)
+        context.draw(source.cgImage!, in: rect)
+        //draw rectangles around faces
+        var fillColor = UIColor.systemGreen
+        fillColor.setStroke()
+        context.setLineWidth(10.0)
+        let rectangleWidth = source.size.width * boundary.size.width
+        let rectangleHeight = source.size.height * boundary.size.height
+        context.addRect(CGRect(
+        x: boundary.origin.x * source.size.width,
+        y:boundary.origin.y * source.size.height,
+        width: rectangleWidth,
+        height: rectangleHeight))
+        context.drawPath(using: CGPathDrawingMode.stroke)
+        //draw facial features
+        fillColor = UIColor.systemRed
+        fillColor.setStroke()
+        context.setLineWidth(5.0)
+        for faceLandmarkRegion in faceLandmarkRegions
+        {
+            var points: [CGPoint] = []
+            for i in 0..<faceLandmarkRegion.pointCount
+            {
+                let point = faceLandmarkRegion.normalizedPoints[i]
+                let p = CGPoint(x: CGFloat(point.x), y: CGFloat(point.y))
+                points.append(p)
+            }
+            let facialPoints = points.map { CGPoint(
+                x: boundary.origin.x * source.size.width + $0.x * rectangleWidth,
+                y: boundary.origin.y * source.size.height + $0.y * rectangleHeight)
+            }
+            context.addLines(between: facialPoints)
+            context.drawPath(using: CGPathDrawingMode.stroke)
+        }
+        let modifiedImage : UIImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        pictureChosen.image = modifiedImage
     }
 
 }
